@@ -1,0 +1,228 @@
+[
+  {
+    "userId": 1,
+    "createdAt": "2025-12-12T20:03:37.337Z",
+    "assessment": {
+      "userId": 1,
+      "age": 19,
+      "weightKg": 79,
+      "heightM": 1.8,
+      "userSex": "MALE",
+      "wakeTime": "10:01",
+      "sleepTime": "01:01",
+      "breakfastTime": "11:02",
+      "lunchTime": "15:02",
+      "dinnerTime": "23:02",
+      "waterCupsDay": 4,
+      "wakeDifficulty": 5,
+      "nightAwakenings": 2,
+      "sleepRepairScore": 5,
+      "sleepOnsetScore": 5,
+      "activityLevel": "MODERATELY_ACTIVE",
+      "exerciseFrequencyPerWeek": 1,
+      "stressLevel": 4,
+      "endOfDayFeeling": "EXHAUSTED",
+      "wellbeingScore": 6,
+      "readinessChange": 5,
+      "confidenceChange": 8,
+      "drinksAlcohol": false,
+      "alcoholFrequency": "NEVER",
+      "smokesTobacco": false,
+      "tobaccoUnitsPerDay": 0,
+      "fruitServingsDay": 4,
+      "vegetableServingsDay": 4,
+      "processedFoodWeek": 3
+    },
+    "habits": [
+      {
+        "id": "habit-1",
+        "title": "Establecer Horario de Sueño",
+        "description": "Intenta acostarte y despertarte a la misma hora todos los días, incluso los fines de semana. El objetivo es acostarse antes de las 00:00 y despertarse antes de las 09:00.  Empieza por ajustar 15-30 minutos cada día hasta alcanzar el horario deseado.",
+        "category": "sueño",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "high",
+        "reasoning": "El horario irregular de sueño afecta la calidad del sueño, la energía y el bienestar general. La consistencia ayuda a regular el ritmo circadiano."
+      },
+      {
+        "id": "habit-2",
+        "title": "Rutina Relajante Nocturna",
+        "description": "30 minutos antes de acostarte, crea una rutina relajante: leer un libro, tomar un baño caliente, escuchar música suave o practicar meditación. Evita pantallas (teléfono, computadora, televisión) al menos una hora antes de dormir.",
+        "category": "sueño",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "high",
+        "reasoning": "Facilita la transición al sueño al reducir la estimulación mental y física."
+      },
+      {
+        "id": "habit-3",
+        "title": "Aumentar Consumo de Agua",
+        "description": "Bebe al menos 8 vasos de agua al día. Lleva una botella de agua contigo y rellénala a lo largo del día. Establece alarmas en tu teléfono para recordarte beber agua.",
+        "category": "hidratación",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "high",
+        "reasoning": "La baja hidratación puede contribuir a la fatiga y afectar el rendimiento físico y mental."
+      },
+      {
+        "id": "habit-4",
+        "title": "Caminata Diaria de 30 Minutos",
+        "description": "Realiza una caminata rápida de 30 minutos todos los días. Puedes dividirla en dos sesiones de 15 minutos si es más conveniente.  Elige un horario que se adapte a tu rutina, como la hora del almuerzo o después del trabajo.",
+        "category": "ejercicio",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Aumenta la actividad física diaria de forma gradual y mejora el estado de ánimo y la energía."
+      },
+      {
+        "id": "habit-5",
+        "title": "Planificación de Comidas",
+        "description": "Dedica 15 minutos a planificar tus comidas de la semana. Esto te ayudará a tomar decisiones más saludables y evitar la comida procesada. Considera preparar comidas con anticipación (meal prep).",
+        "category": "alimentación",
+        "frequency": "semanal",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Reduce el consumo de alimentos procesados al tener opciones saludables disponibles y planificadas."
+      },
+      {
+        "id": "habit-6",
+        "title": "Técnicas de Relajación",
+        "description": "Practica técnicas de relajación como la respiración profunda o la meditación durante 5-10 minutos al día. Puedes encontrar guías de meditación en línea o usar aplicaciones de mindfulness.",
+        "category": "estrés",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Ayuda a reducir el estrés y la sensación de agotamiento al final del día."
+      },
+      {
+        "id": "habit-7",
+        "title": "Estiramientos Matutinos",
+        "description": "Realiza una breve sesión de estiramientos de 5-10 minutos al despertar. Enfócate en estirar los músculos que se sienten tensos. Esto puede mejorar la energía y la flexibilidad.",
+        "category": "bienestar",
+        "frequency": "diario",
+        "timeOfDay": "mañana",
+        "priority": "low",
+        "reasoning": "Mejora la circulación y reduce la rigidez muscular al despertar, contribuyendo a una mejor sensación general."
+      }
+    ],
+    "summary": "El usuario, un hombre de 19 años con un IMC saludable, muestra buenos hábitos en el consumo de frutas y verduras. Sin embargo, presenta un horario de sueño irregular, baja hidratación, ejercicio infrecuente y sensación de agotamiento al final del día. El plan se enfoca en mejorar el sueño, la hidratación, la actividad física y el manejo del estrés, considerando su moderada disposición al cambio."
+  },
+  {
+    "userId": 1,
+    "createdAt": "2025-12-12T20:19:36.289Z",
+    "assessment": {
+      "userId": 1,
+      "age": 19,
+      "weightKg": 79,
+      "heightM": 1.8,
+      "userSex": "MALE",
+      "wakeTime": "09:30",
+      "sleepTime": "00:30",
+      "breakfastTime": "11:30",
+      "lunchTime": "14:00",
+      "dinnerTime": "21:20",
+      "waterCupsDay": 6,
+      "wakeDifficulty": 7,
+      "nightAwakenings": 3,
+      "sleepRepairScore": 6,
+      "sleepOnsetScore": 8,
+      "activityLevel": "MODERATELY_ACTIVE",
+      "exerciseFrequencyPerWeek": 2,
+      "stressLevel": 5,
+      "endOfDayFeeling": "NEUTRAL",
+      "wellbeingScore": 5,
+      "readinessChange": 5,
+      "confidenceChange": 5,
+      "drinksAlcohol": false,
+      "alcoholFrequency": "NEVER",
+      "smokesTobacco": false,
+      "tobaccoUnitsPerDay": 0,
+      "fruitServingsDay": 4,
+      "vegetableServingsDay": 3,
+      "processedFoodWeek": 2
+    },
+    "habits": [
+      {
+        "id": "habit-1",
+        "title": "Ajustar Horario de Sueño",
+        "description": "Adelantar gradualmente la hora de dormir y despertar 15 minutos cada día hasta llegar a un horario de sueño más consistente, apuntando a dormir entre 23:00 y 07:30. Esto ayudará a mejorar la calidad del sueño y reducir la dificultad para despertar.",
+        "category": "sueño",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "high",
+        "reasoning": "El horario de sueño actual es inconsistente y afecta la calidad del sueño. Un horario más regular mejorará el descanso y la energía durante el día."
+      },
+      {
+        "id": "habit-2",
+        "title": "Rutina de Relajación Nocturna",
+        "description": "Implementar una rutina de relajación de 30 minutos antes de dormir. Esto puede incluir leer un libro, tomar un baño caliente, meditar o practicar ejercicios de respiración profunda. Evitar pantallas (teléfono, computadora) una hora antes de dormir.",
+        "category": "sueño",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "medium",
+        "reasoning": "La rutina de relajación facilita la conciliación del sueño y reduce los despertares nocturnos."
+      },
+      {
+        "id": "habit-3",
+        "title": "Desayuno Nutritivo Temprano",
+        "description": "Desayunar dentro de la primera hora después de despertar (alrededor de las 10:30). Priorizar alimentos ricos en proteínas y fibra, como huevos, yogur griego con fruta y granola, o avena con frutos secos. Esto ayudará a regular el apetito y mejorar la energía durante el día.",
+        "category": "alimentación",
+        "frequency": "diario",
+        "timeOfDay": "mañana",
+        "priority": "high",
+        "reasoning": "El desayuno actual es demasiado tarde y puede afectar los niveles de energía y el metabolismo."
+      },
+      {
+        "id": "habit-4",
+        "title": "Planificación de Comidas",
+        "description": "Dedicar 30 minutos a la semana a planificar las comidas para la semana siguiente. Esto incluye elegir recetas saludables, hacer una lista de compras y preparar algunos ingredientes con anticipación. Reducir la comida procesada a 1 vez por semana.",
+        "category": "alimentación",
+        "frequency": "semanal",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "La planificación de comidas facilita la elección de alimentos saludables y reduce la dependencia de comidas procesadas."
+      },
+      {
+        "id": "habit-5",
+        "title": "Aumentar Hidratación",
+        "description": "Aumentar la ingesta de agua a 8 vasos al día. Llevar una botella de agua siempre y beber un vaso antes de cada comida. Variar la hidratación con infusiones o té sin azúcar.",
+        "category": "hidratación",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Una mayor hidratación mejora la función cognitiva, la digestión y la energía."
+      },
+      {
+        "id": "habit-6",
+        "title": "Caminata Diaria Corta",
+        "description": "Realizar una caminata de 20 minutos al aire libre todos los días. Esto puede ser durante la pausa del almuerzo o después de la cena. Escuchar música o un podcast durante la caminata puede hacerla más agradable.",
+        "category": "ejercicio",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Una caminata diaria mejora la salud cardiovascular, reduce el estrés y aumenta la energía."
+      },
+      {
+        "id": "habit-7",
+        "title": "Mindfulness 5 minutos",
+        "description": "Practicar mindfulness o meditación durante 5 minutos al día. Utilizar una aplicación guiada o simplemente concentrarse en la respiración. Esto ayudará a reducir el estrés y mejorar el bienestar general.",
+        "category": "estrés",
+        "frequency": "diario",
+        "timeOfDay": "mañana",
+        "priority": "low",
+        "reasoning": "La práctica de mindfulness reduce el estrés y mejora la capacidad de afrontamiento."
+      },
+      {
+        "id": "habit-8",
+        "title": "Reflexión Diaria",
+        "description": "Al final del día, dedicar 5 minutos a reflexionar sobre las cosas positivas que sucedieron y las cosas por las que se está agradecido. Escribir estas reflexiones en un diario puede ser útil.",
+        "category": "bienestar",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "low",
+        "reasoning": "La reflexión diaria promueve una actitud positiva y mejora el bienestar general."
+      }
+    ],
+    "summary": "El usuario presenta un IMC dentro del rango normal, pero tiene áreas de mejora en el sueño, horarios de comidas, gestión del estrés y bienestar general. El plan se enfoca en optimizar estos aspectos considerando su nivel de actividad moderada y disposición al cambio."
+  }
+]

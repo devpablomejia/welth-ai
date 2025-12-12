@@ -1,6 +1,13 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Proyecto Next.js (App Router) con Vercel AI SDK + Gemini.
 
 ## Getting Started
+
+### 1) Configura variables de entorno
+
+- Copia `.env.example` a `.env.local`
+- Completa `GOOGLE_GENERATIVE_AI_API_KEY`
+
+### 2) Corre el proyecto
 
 First, run the development server:
 
@@ -15,6 +22,10 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Endpoint
+
+- POST `/api/chat` (streaming) usando el modelo definido por `GEMINI_MODEL`.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
