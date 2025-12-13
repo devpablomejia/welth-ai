@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { HabitPlan, Habit } from "@/app/types/assessment";
 import { Button } from "@/components/ui/button";
+import {
+  ChartContainer,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import {
   Card,
   CardContent,
@@ -12,24 +17,52 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ClipboardList, TrendingUp, Calendar, Target } from "lucide-react";
+import { CartesianGrid, Line, LineChart, XAxis, Tooltip } from "recharts";
+
+type MeResponse = {
+  isPremium: boolean;
+  tier: "free" | "premium";
+  evaluationCount: number;
+  freeLimit: number;
+  freeRemaining: number;
+};
 
 export default function TrackingPage() {
   const router = useRouter();
-  const [plan, setPlan] = useState<HabitPlan | null>(null);
+  const [plans, setPlans] = useState<HabitPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadPlan();
-  }, []);
-
-  const loadPlan = async () => {
+  const loadAll = useCallback(async () => {
     try {
-      const response = await fetch(`/api/plans`);
+      const meRes = await fetch("/api/me");
+      if (!meRes.ok) {
+        if (meRes.status === 401) {
+          router.push("/auth");
+          return;
+        }
+        throw new Error("Error al cargar el usuario");
+      }
+
+      const meData = (await meRes.json()) as MeResponse;
+      setMe(meData);
+
+      // Premium: load full history. Free: load only latest plan.
+      const response = await fetch(
+        meData.isPremium ? "/api/plans?all=1" : "/api/plans"
+      );
 
       if (!response.ok) {
         if (response.status === 401) {
           router.push("/auth");
+          return;
+        }
+        if (response.status === 403) {
+          // History is premium-only; free users should not hit this if UI is correct.
+          setError("Premium requerido para ver el historial.");
+          setLoading(false);
           return;
         }
         if (response.status === 404) {
@@ -41,44 +74,65 @@ export default function TrackingPage() {
         return;
       }
 
-      const data = await response.json();
-      setPlan(data);
+      const data = (await response.json()) as HabitPlan | HabitPlan[];
+      const plansArray = Array.isArray(data) ? data : [data];
+      setPlans(plansArray);
+      setSelectedPlanId(plansArray?.[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "border-red-500 bg-red-50";
-      case "medium":
-        return "border-yellow-500 bg-yellow-50";
-      case "low":
-        return "border-green-500 bg-green-50";
-      default:
-        return "border-gray-500 bg-gray-50";
-    }
-  };
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
-  const getPriorityBadgeColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
+
+  const progressSeries = (() => {
+    if (!me?.isPremium) return [];
+
+    const sorted = [...plans].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    return sorted.map((p) => ({
+      date: new Date(p.createdAt).toLocaleDateString("es", {
+        month: "short",
+        day: "2-digit",
+      }),
+      wellbeing: p.assessment.wellbeingScore,
+      stress: p.assessment.stressLevel,
+      sleep: p.assessment.sleepRepairScore,
+      exercise: p.assessment.exerciseFrequencyPerWeek,
+    }));
+  })();
+
+  const chartConfig = {
+    wellbeing: {
+      label: "Bienestar",
+      color: "hsl(var(--primary))",
+    },
+    stress: {
+      label: "Estrés",
+      color: "hsl(var(--destructive))",
+    },
+    sleep: {
+      label: "Sueño reparador",
+      color: "hsl(var(--ring))",
+    },
+    exercise: {
+      label: "Ejercicio/sem",
+      color: "hsl(var(--muted-foreground))",
+    },
+  } satisfies ChartConfig;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center space-y-4 animate-pulse">
           <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto"></div>
           <p className="text-gray-600">Cargando plan de hábitos...</p>
@@ -87,7 +141,7 @@ export default function TrackingPage() {
     );
   }
 
-  if (error || !plan) {
+  if (error || plans.length === 0) {
     return (
       <div className="max-w-2xl mx-auto animate-slide-up">
         <Card className="border-2">
@@ -118,6 +172,8 @@ export default function TrackingPage() {
     );
   }
 
+  const plan = selectedPlan ?? plans[0];
+
   const highPriorityHabits = plan.habits.filter((h) => h.priority === "high");
   const mediumPriorityHabits = plan.habits.filter(
     (h) => h.priority === "medium"
@@ -126,15 +182,142 @@ export default function TrackingPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Plan tier */}
+      {me && (
+        <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-xl">
+          <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              {me.isPremium ? (
+                <span className="font-semibold">Plan Premium activo</span>
+              ) : (
+                <span>
+                  <span className="font-semibold">Plan Free</span> —{" "}
+                  {me.evaluationCount}/{me.freeLimit} evaluaciones usadas (
+                  {me.freeRemaining} restantes)
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* History selector (Premium only) */}
+      {me?.isPremium && (
+        <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
+              Historial de evaluaciones
+            </CardTitle>
+            <CardDescription>
+              Selecciona una evaluación para ver su plan de hábitos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {plans.map((p) => {
+                const isActive = p.id === selectedPlanId;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setSelectedPlanId(p.id ?? null)}
+                    className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
+                      isActive
+                        ? "border-primary bg-primary text-white"
+                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {new Date(p.createdAt).toLocaleDateString("es", {
+                      year: "numeric",
+                      month: "short",
+                      day: "2-digit",
+                    })}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Premium charts based on history */}
+      {me?.isPremium && (
+        <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
+              Progreso en el tiempo
+            </CardTitle>
+            <CardDescription>
+              Visualización basada en tu historial de evaluaciones.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {progressSeries.length < 2 ? (
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Necesitas al menos 2 evaluaciones para ver el progreso.
+              </div>
+            ) : (
+              <ChartContainer config={chartConfig} className="h-80 w-full">
+                <LineChart
+                  data={progressSeries}
+                  margin={{ left: 12, right: 12 }}
+                >
+                  <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={12}
+                  />
+                  <Tooltip
+                    content={<ChartTooltipContent config={chartConfig} />}
+                    cursor={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="wellbeing"
+                    stroke="var(--color-wellbeing)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="stress"
+                    stroke="var(--color-stress)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="sleep"
+                    stroke="var(--color-sleep)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="exercise"
+                    stroke="var(--color-exercise)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header Summary Card */}
-      <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900">
+      <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 bg-linear-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900">
         <CardHeader className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                 Tu Plan de Hábitos Personalizado
               </CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-500 dark:text-slate-400 mt-2 text-sm sm:text-base font-medium">
+              <CardDescription className="text-slate-600 dark:text-slate-400 mt-2 text-sm sm:text-base font-medium">
                 Generado el{" "}
                 {new Date(plan.createdAt).toLocaleDateString("es", {
                   year: "numeric",
@@ -164,7 +347,7 @@ export default function TrackingPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <Card className="border-2 border-slate-100 dark:border-slate-700/50 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all rounded-xl">
           <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-500 dark:text-slate-400">
+            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
               Total de Hábitos
             </CardTitle>
           </CardHeader>
@@ -180,7 +363,7 @@ export default function TrackingPage() {
 
         <Card className="border-2 border-slate-100 dark:border-slate-700/50 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all rounded-xl">
           <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-500 dark:text-slate-400">
+            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
               Alta Prioridad
             </CardTitle>
           </CardHeader>
@@ -196,7 +379,7 @@ export default function TrackingPage() {
 
         <Card className="border-2 border-slate-100 dark:border-slate-700/50 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all rounded-xl sm:col-span-2 md:col-span-1">
           <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-500 dark:text-slate-400">
+            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
               Última Actualización
             </CardTitle>
           </CardHeader>

@@ -7,6 +7,20 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
+const FREE_EVALUATION_LIMIT = 10;
+
+type SubscriptionRow = {
+    tier: 'free' | 'premium';
+    current_period_end: string | null;
+} | null;
+
+function isPremiumSubscription(sub: SubscriptionRow) {
+    if (!sub) return false;
+    if (sub.tier !== 'premium') return false;
+    if (!sub.current_period_end) return true;
+    return new Date(sub.current_period_end).getTime() > Date.now();
+}
+
 export async function POST(req: Request) {
     try {
         if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
@@ -33,6 +47,50 @@ export async function POST(req: Request) {
             );
         }
 
+        // Freemium gate: free users can generate up to N evaluations; premium is unlimited.
+        let subscription: SubscriptionRow = null;
+        const { data: sub, error: subError } = await supabase
+            .from('subscriptions')
+            .select('tier, current_period_end')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (subError) {
+            // If the table isn't created yet, treat as free.
+            console.error('Error fetching subscription:', subError);
+        } else {
+            subscription = (sub as SubscriptionRow) ?? null;
+        }
+
+        const isPremium = isPremiumSubscription(subscription);
+
+        if (!isPremium) {
+            const { count, error: countError } = await supabase
+                .from('habit_plans')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', user.id);
+
+            if (countError) {
+                console.error('Error counting habit plans:', countError);
+                return NextResponse.json(
+                    { error: 'Failed to validate plan limit' },
+                    { status: 500 }
+                );
+            }
+
+            const evaluationCount = count ?? 0;
+            if (evaluationCount >= FREE_EVALUATION_LIMIT) {
+                return NextResponse.json(
+                    {
+                        error: `Has alcanzado el límite de ${FREE_EVALUATION_LIMIT} evaluaciones gratuitas. Pásate a Premium para evaluaciones ilimitadas e historial completo.`,
+                        code: 'FREE_LIMIT_REACHED',
+                        limit: FREE_EVALUATION_LIMIT,
+                    },
+                    { status: 403 }
+                );
+            }
+        }
+
         const assessment: AssessmentRequest = await req.json();
 
         // Validate required fields
@@ -43,8 +101,49 @@ export async function POST(req: Request) {
             );
         }
 
-        // Build prompt from assessment
-        const prompt = buildAssessmentPrompt(assessment);
+        // Premium-only: include recent evaluation history as context for better recommendations.
+        // Keep it compact to avoid token bloat.
+        let historyContext: string | undefined;
+        if (isPremium) {
+            const { data: history, error: historyError } = await supabase
+                .from('habit_plans')
+                .select('created_at, assessment, habits, summary')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(3);
+
+            if (historyError) {
+                console.error('Error fetching history context:', historyError);
+            } else if (history && history.length > 0) {
+                historyContext = history
+                    .map((p) => {
+                        const createdAt = p.created_at ? new Date(p.created_at).toISOString().slice(0, 10) : 'sin-fecha';
+                        const a = (p.assessment ?? {}) as Partial<AssessmentRequest>;
+                        const habits = Array.isArray(p.habits) ? (p.habits as Array<Partial<Habit>>) : [];
+                        const highPriority = habits
+                            .filter((h) => h?.priority === 'high')
+                            .slice(0, 3)
+                            .map((h) => h?.title)
+                            .filter(Boolean)
+                            .join('; ');
+
+                        const scores = [
+                            typeof a.wellbeingScore === 'number' ? `bienestar=${a.wellbeingScore}` : null,
+                            typeof a.stressLevel === 'number' ? `estrés=${a.stressLevel}` : null,
+                            typeof a.sleepRepairScore === 'number' ? `sueño=${a.sleepRepairScore}` : null,
+                            typeof a.exerciseFrequencyPerWeek === 'number' ? `ejercicio/sem=${a.exerciseFrequencyPerWeek}` : null,
+                        ]
+                            .filter(Boolean)
+                            .join(', ');
+
+                        return `- ${createdAt}${scores ? ` (${scores})` : ''}: ${p.summary}${highPriority ? ` | Hábitos alta prioridad: ${highPriority}` : ''}`;
+                    })
+                    .join('\n');
+            }
+        }
+
+        // Build prompt from assessment (and optional premium history context)
+        const prompt = buildAssessmentPrompt(assessment, { historyContext });
 
         // Generate habit plan using AI
         const modelName = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash';

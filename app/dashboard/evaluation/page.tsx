@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   AssessmentRequest,
@@ -31,7 +31,6 @@ import {
   Activity,
   Heart,
   Cigarette,
-  Loader2,
   CheckCircle,
 } from "lucide-react";
 
@@ -74,11 +73,45 @@ const STEPS = [
   },
 ];
 
+type MeResponse = {
+  isPremium: boolean;
+  tier: "free" | "premium";
+  evaluationCount: number;
+  freeLimit: number;
+  freeRemaining: number;
+};
+
 export default function EvaluationPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [me, setMe] = useState<MeResponse | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMe = async () => {
+      try {
+        const res = await fetch("/api/me");
+        if (res.status === 401) {
+          router.push("/auth");
+          return;
+        }
+        if (!res.ok) return;
+        const data = (await res.json()) as MeResponse;
+        if (mounted) setMe(data);
+      } catch {
+        // Ignore: evaluation can still work (server enforces limits).
+      }
+    };
+
+    loadMe();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   const [formData, setFormData] = useState<Partial<AssessmentRequest>>({
     age: undefined,
@@ -187,6 +220,13 @@ export default function EvaluationPage() {
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) {
       setError("Por favor completa todos los campos requeridos");
+      return;
+    }
+
+    if (me && !me.isPremium && me.freeRemaining <= 0) {
+      setError(
+        `Has alcanzado el límite de ${me.freeLimit} evaluaciones gratuitas. Pásate a Premium para evaluaciones ilimitadas e historial completo.`
+      );
       return;
     }
 
@@ -299,7 +339,7 @@ export default function EvaluationPage() {
         return (
           <>
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-4 rounded-r-lg flex items-start gap-3">
-              <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <p className="text-sm text-blue-900 dark:text-blue-100 font-medium leading-relaxed">
                 El sueño es fundamental para tu salud. Comparte tus horarios
                 habituales y cómo te sientes al despertar.
@@ -434,7 +474,7 @@ export default function EvaluationPage() {
         return (
           <>
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-4 rounded-r-lg flex items-start gap-3">
-              <Utensils className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <Utensils className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <p className="text-sm text-blue-900 dark:text-blue-100 font-medium leading-relaxed">
                 Tus hábitos alimenticios son clave. Cuéntanos sobre tus horarios
                 de comida y consumo de agua.
@@ -577,7 +617,7 @@ export default function EvaluationPage() {
         return (
           <>
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-4 rounded-r-lg flex items-start gap-3">
-              <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <p className="text-sm text-blue-900 dark:text-blue-100 font-medium leading-relaxed">
                 La actividad física es esencial. Ayúdanos a entender tu nivel de
                 movimiento diario y ejercicio.
@@ -654,7 +694,7 @@ export default function EvaluationPage() {
         return (
           <>
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-4 rounded-r-lg flex items-start gap-3">
-              <Heart className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <Heart className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <p className="text-sm text-blue-900 dark:text-blue-100 font-medium leading-relaxed">
                 Tu bienestar emocional es tan importante como el físico.
                 Compártenos cómo te sientes.
@@ -796,7 +836,7 @@ export default function EvaluationPage() {
         return (
           <>
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-4 rounded-r-lg flex items-start gap-3">
-              <Cigarette className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <Cigarette className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <p className="text-sm text-blue-900 dark:text-blue-100 font-medium leading-relaxed">
                 Información confidencial sobre alcohol y tabaco. Tus respuestas
                 nos ayudan a darte mejores recomendaciones.
@@ -920,6 +960,18 @@ export default function EvaluationPage() {
         <p className="text-slate-500 dark:text-slate-400 font-medium">
           Paso {currentStep} de {STEPS.length}
         </p>
+
+        {me && (
+          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            {me.isPremium ? (
+              <span>Plan Premium — evaluaciones ilimitadas</span>
+            ) : (
+              <span>
+                Plan Free — {me.evaluationCount}/{me.freeLimit} usadas ({me.freeRemaining} restantes)
+              </span>
+            )}
+          </div>
+        )}
         {/* Progress Bar */}
         <div className="w-full max-w-xs mx-auto h-1 bg-slate-200 dark:bg-slate-700 rounded-full mt-4 overflow-hidden">
           <div
@@ -932,9 +984,9 @@ export default function EvaluationPage() {
       {/* Visual Stepper */}
       <div className="flex justify-between items-start w-full max-w-4xl mx-auto relative px-4">
         {/* Connection Line */}
-        <div className="absolute top-6 left-0 right-0 mx-auto w-[calc(100%-8rem)] h-0.5 bg-slate-200 dark:bg-slate-700 z-[1] hidden md:block"></div>
+        <div className="absolute top-6 left-0 right-0 mx-auto w-[calc(100%-8rem)] h-0.5 bg-slate-200 dark:bg-slate-700 z-1 hidden md:block"></div>
 
-        {STEPS.map((step, index) => {
+        {STEPS.map((step) => {
           const StepIcon = step.icon;
           const isCompleted = currentStep > step.id;
           const isCurrent = currentStep === step.id;
@@ -1016,7 +1068,7 @@ export default function EvaluationPage() {
           {error && (
             <div className="mt-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg flex items-start gap-3 animate-slide-down">
               <svg
-                className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500"
+                className="w-5 h-5 mt-0.5 shrink-0 text-red-500"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -1056,7 +1108,7 @@ export default function EvaluationPage() {
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={loading || (!!me && !me.isPremium && me.freeRemaining <= 0)}
               className="w-full md:w-auto px-8 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition-all group"
             >
               {loading ? (

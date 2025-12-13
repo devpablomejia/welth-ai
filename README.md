@@ -72,6 +72,26 @@ create policy "insert own habit plans"
 on public.habit_plans
 for insert
 with check (auth.uid() = user_id);
+
+-- Subscription tier (freemium vs premium)
+-- Note: By default, users are treated as "free" if there is no row.
+create table if not exists public.subscriptions (
+   user_id uuid primary key references auth.users(id) on delete cascade,
+   tier text not null default 'free' check (tier in ('free', 'premium')),
+   current_period_end timestamptz,
+   created_at timestamptz not null default now()
+);
+
+alter table public.subscriptions enable row level security;
+
+-- Users can read their own subscription status
+create policy "read own subscription"
+on public.subscriptions
+for select
+using (auth.uid() = user_id);
+
+-- Intentionally no INSERT/UPDATE policy.
+-- Subscription rows should be managed by an admin process (or a future payment webhook).
 ```
 
 ### 2) Corre el proyecto
