@@ -92,7 +92,7 @@ export function ChartTooltipContent({
   });
 
   return (
-    <div className="rounded-lg border bg-card px-3 py-2 text-sm shadow-sm">
+    <div className="rounded-lg bg-card px-3 py-2 text-sm shadow-sm">
       <div className="mb-2 font-medium text-foreground">{labelText}</div>
       <div className="space-y-1">
         {orderedPayload

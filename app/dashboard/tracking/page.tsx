@@ -176,15 +176,15 @@ export default function TrackingPage() {
     },
     stress: {
       label: "Estrés (↓ mejor)",
-      color: "hsl(var(--destructive))",
+      color: "hsl(0 84% 60%)",
     },
     sleep: {
       label: "Sueño reparador",
-      color: "hsl(var(--ring))",
+      color: "hsl(262 83% 58%)",
     },
     exercise: {
       label: "Ejercicio/sem",
-      color: "hsl(var(--muted-foreground))",
+      color: "hsl(142 76% 36%)",
     },
   } satisfies ChartConfig;
 
@@ -224,6 +224,51 @@ export default function TrackingPage() {
     return `${sign}${rounded}`;
   }, []);
 
+  const describeDelta = useCallback(
+    (
+      key: "wellbeing" | "stress" | "sleep" | "exercise",
+      raw: number
+    ): {
+      direction: "up" | "down" | "flat";
+      sentiment: "better" | "worse" | "same";
+      className: string;
+      valueText: string;
+      hint: string;
+    } => {
+      const rounded = Math.round(raw * 10) / 10;
+      if (rounded === 0) {
+        return {
+          direction: "flat",
+          sentiment: "same",
+          className: "text-muted-foreground",
+          valueText: formatDeltaValue(key, raw),
+          hint: "Sin cambio",
+        };
+      }
+
+      const higherIsBetter = key !== "stress";
+      const isBetter = higherIsBetter ? rounded > 0 : rounded < 0;
+      const isWorse = !isBetter;
+
+      const direction: "up" | "down" = higherIsBetter
+        ? rounded > 0
+          ? "up"
+          : "down"
+        : rounded < 0
+        ? "down"
+        : "up";
+
+      return {
+        direction,
+        sentiment: isBetter ? "better" : "worse",
+        className: isBetter ? "text-primary" : "text-destructive",
+        valueText: formatDeltaValue(key, raw),
+        hint: isBetter ? "Mejor" : isWorse ? "Peor" : "Sin cambio",
+      };
+    },
+    [formatDeltaValue]
+  );
+
   // Comparison against historical baseline (premium only):
   // - Prefer average of evaluations BEFORE the selected one.
   // - If there are none, fall back to average of all other evaluations.
@@ -254,6 +299,15 @@ export default function TrackingPage() {
 
     return hasPrior ? "vs promedio previo" : "vs promedio histórico";
   }, [me?.isPremium, planForMetrics?.id, selectedTs, sortedPlansAsc]);
+
+  const comparisonDetails = useMemo(() => {
+    if (!me?.isPremium) return null;
+    if (!comparisonLabel) return null;
+    const n = comparisonBaselinePlans.length;
+    if (n <= 0) return null;
+    const baseText = n === 1 ? "1 evaluación" : `${n} evaluaciones`;
+    return `${comparisonLabel} • ${baseText}`;
+  }, [comparisonBaselinePlans, comparisonLabel, me?.isPremium]);
 
   const historicalAverage = useMemo(() => {
     if (!me?.isPremium) return null;
@@ -368,11 +422,11 @@ export default function TrackingPage() {
   const lowPriorityHabits = plan.habits.filter((h) => h.priority === "low");
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-5 sm:space-y-6 animate-fade-in">
       {/* Plan tier */}
       {me && (
-        <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-xl">
-          <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <Card className="border-0 bg-muted/50 rounded-xl">
+          <CardContent className="p-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="text-sm text-slate-700 dark:text-slate-300">
               {me.isPremium ? (
                 <span className="font-semibold">Plan Premium activo</span>
@@ -390,17 +444,17 @@ export default function TrackingPage() {
 
       {/* History selector (Premium only) */}
       {me?.isPremium && (
-        <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
+        <Card className="border-0 bg-muted/50 rounded-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-bold text-foreground">
               Historial de evaluaciones
             </CardTitle>
             <CardDescription>
               Selecciona una evaluación para ver su plan de hábitos.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
+          <CardContent className="px-4 sm:px-6 pt-0 pb-5 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2.5 rounded-xl bg-background/50 p-2.5 sm:p-3">
               {plans.map((p) => {
                 const isActive = p.id === selectedPlanId;
                 return (
@@ -408,11 +462,13 @@ export default function TrackingPage() {
                     key={p.id}
                     type="button"
                     onClick={() => setSelectedPlanId(p.id ?? null)}
-                    className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
-                      isActive
-                        ? "border-primary bg-primary text-white"
-                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                    }`}
+                    aria-pressed={isActive}
+                    className={
+                      "inline-flex items-center justify-center rounded-full border-0 px-4 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11 w-full sm:w-auto " +
+                      (isActive
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-background/70 text-foreground hover:bg-primary/10 hover:text-primary active:scale-95")
+                    }
                   >
                     {new Date(p.createdAt).toLocaleDateString("es", {
                       year: "numeric",
@@ -429,216 +485,310 @@ export default function TrackingPage() {
 
       {/* Premium charts based on history */}
       {me?.isPremium && (
-        <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
+        <Card className="border-0 bg-muted/50 rounded-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-bold text-foreground">
               Progreso en el tiempo
             </CardTitle>
             <CardDescription>
               Visualización basada en tu historial de evaluaciones.
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-2 pb-6">
+          <CardContent className="px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
             {progressSeries.length < 2 ? (
-              <div className="text-sm text-slate-600 dark:text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 Necesitas al menos 2 evaluaciones para ver el progreso.
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5 sm:space-y-6">
                 {delta && (
-                  <div className="text-xs text-slate-600 dark:text-slate-400">
-                    {comparisonLabel ?? "Comparación"}: Bienestar{" "}
-                    {formatDeltaValue("wellbeing", delta.wellbeing)} • Estrés{" "}
-                    {formatDeltaValue("stress", delta.stress)} (↓ mejor) • Sueño{" "}
-                    {formatDeltaValue("sleep", delta.sleep)} • Ejercicio{" "}
-                    {formatDeltaValue("exercise", delta.exercise)}
+                  <div className="rounded-xl bg-background/80 p-4 sm:p-5">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3">
+                        <div className="text-base sm:text-sm font-semibold text-foreground">
+                          Comparación
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {comparisonDetails ?? comparisonLabel ?? "—"}
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Diferencia vs el promedio (Estrés: ↓ es mejor).
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {[
+                        {
+                          key: "wellbeing" as const,
+                          label: "Bienestar",
+                          value: delta.wellbeing,
+                        },
+                        {
+                          key: "stress" as const,
+                          label: "Estrés",
+                          value: delta.stress,
+                        },
+                        {
+                          key: "sleep" as const,
+                          label: "Sueño reparador",
+                          value: delta.sleep,
+                        },
+                        {
+                          key: "exercise" as const,
+                          label: "Ejercicio",
+                          value: delta.exercise,
+                        },
+                      ].map((m) => {
+                        const d = describeDelta(m.key, m.value);
+                        const arrow =
+                          d.direction === "flat"
+                            ? "→"
+                            : d.direction === "up"
+                            ? "↑"
+                            : "↓";
+
+                        return (
+                          <div
+                            key={m.key}
+                            className="flex items-center justify-between gap-3 rounded-lg bg-muted/50 px-4 py-3 min-h-15"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                {m.label}
+                              </div>
+                              <div
+                                className={`text-base sm:text-sm font-semibold ${d.className}`}
+                              >
+                                {arrow} {d.valueText}
+                              </div>
+                            </div>
+                            <div className="shrink-0 rounded-full bg-background/70 px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
+                              {d.hint}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
-                <ChartContainer config={chartConfig} className="h-80 w-full">
-                  <LineChart
-                    data={progressSeries}
-                    margin={{ left: 8, right: 8 }}
+                <div className="rounded-xl bg-background/80 p-3 sm:p-5 -mx-2 sm:mx-0">
+                  <ChartContainer
+                    config={chartConfig}
+                    className="h-80 sm:h-96 lg:h-112 w-full"
                   >
-                    <CartesianGrid
-                      vertical={false}
-                      stroke="hsl(var(--border))"
-                      strokeDasharray="3 3"
-                    />
+                    <LineChart
+                      data={progressSeries}
+                      margin={{ top: 60, left: 4, right: 4, bottom: 8 }}
+                    >
+                      <CartesianGrid
+                        vertical={false}
+                        stroke="hsl(var(--border))"
+                        strokeDasharray="5 5"
+                        strokeOpacity={0.4}
+                      />
 
-                    <XAxis
-                      dataKey="ts"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      minTickGap={14}
-                      tick={{
-                        fill: "hsl(var(--muted-foreground))",
-                        fontSize: 12,
-                      }}
-                      tickFormatter={(value) =>
-                        new Date(Number(value)).toLocaleDateString("es", {
-                          month: "short",
-                          day: "2-digit",
-                        })
-                      }
-                    />
+                      <XAxis
+                        dataKey="ts"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        minTickGap={32}
+                        tick={{
+                          fill: "hsl(var(--muted-foreground))",
+                          fontSize: 11,
+                        }}
+                        tickFormatter={(value) =>
+                          new Date(Number(value)).toLocaleDateString("es", {
+                            month: "short",
+                            day: "2-digit",
+                          })
+                        }
+                      />
 
-                    <YAxis
-                      yAxisId="score"
-                      domain={[0, 10]}
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tick={{
-                        fill: "hsl(var(--muted-foreground))",
-                        fontSize: 12,
-                      }}
-                    />
+                      <YAxis
+                        yAxisId="score"
+                        domain={[0, 10]}
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={4}
+                        width={32}
+                        tick={{
+                          fill: "hsl(var(--muted-foreground))",
+                          fontSize: 11,
+                        }}
+                      />
 
-                    <YAxis
-                      yAxisId="exercise"
-                      orientation="right"
-                      domain={[0, "auto"]}
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tick={{
-                        fill: "hsl(var(--muted-foreground))",
-                        fontSize: 12,
-                      }}
-                    />
+                      <YAxis
+                        yAxisId="exercise"
+                        orientation="right"
+                        domain={[0, "auto"]}
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={4}
+                        width={32}
+                        tick={{
+                          fill: "hsl(var(--muted-foreground))",
+                          fontSize: 11,
+                        }}
+                      />
 
-                    <Tooltip
-                      content={
-                        <ChartTooltipContent
-                          config={chartConfig}
-                          labelFormatter={formatTooltipLabel}
-                          valueFormatter={formatTooltipValue}
-                        />
-                      }
-                      cursor={{ stroke: "hsl(var(--border))" }}
-                    />
-
-                    <Legend
-                      verticalAlign="top"
-                      align="left"
-                      wrapperStyle={{ paddingBottom: 8 }}
-                      formatter={(value) => {
-                        const key = String(value);
-                        const cfg = (chartConfig as ChartConfig)[key];
-                        return (
-                          <span className="text-xs text-slate-600 dark:text-slate-400">
-                            {cfg?.label ?? key}
-                          </span>
-                        );
-                      }}
-                    />
-
-                    <Line
-                      yAxisId="score"
-                      type="monotone"
-                      dataKey="wellbeing"
-                      stroke="var(--color-wellbeing)"
-                      strokeWidth={2}
-                      dot={(p) => {
-                        const t = p?.payload?.ts as number | undefined;
-                        const isKey =
-                          (selectedTs != null && t === selectedTs) ||
-                          (latestTs != null && t === latestTs);
-                        if (!isKey) return false;
-                        return (
-                          <circle
-                            cx={p.cx}
-                            cy={p.cy}
-                            r={4}
-                            fill="var(--color-wellbeing)"
-                            stroke="hsl(var(--background))"
-                            strokeWidth={2}
+                      <Tooltip
+                        content={
+                          <ChartTooltipContent
+                            config={chartConfig}
+                            labelFormatter={formatTooltipLabel}
+                            valueFormatter={formatTooltipValue}
                           />
-                        );
-                      }}
-                      activeDot={{ r: 5 }}
-                    />
+                        }
+                        cursor={{
+                          stroke: "hsl(var(--border))",
+                          strokeDasharray: "4 4",
+                        }}
+                      />
 
-                    <Line
-                      yAxisId="score"
-                      type="monotone"
-                      dataKey="stress"
-                      stroke="var(--color-stress)"
-                      strokeWidth={2}
-                      dot={(p) => {
-                        const t = p?.payload?.ts as number | undefined;
-                        const isKey =
-                          (selectedTs != null && t === selectedTs) ||
-                          (latestTs != null && t === latestTs);
-                        if (!isKey) return false;
-                        return (
-                          <circle
-                            cx={p.cx}
-                            cy={p.cy}
-                            r={4}
-                            fill="var(--color-stress)"
-                            stroke="hsl(var(--background))"
-                            strokeWidth={2}
-                          />
-                        );
-                      }}
-                      activeDot={{ r: 5 }}
-                    />
+                      <Legend
+                        verticalAlign="top"
+                        align="center"
+                        wrapperStyle={{
+                          paddingTop: 0,
+                          paddingBottom: 16,
+                          marginTop: -50,
+                          display: "flex",
+                          justifyContent: "center",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                        }}
+                        iconType="circle"
+                        iconSize={8}
+                        formatter={(value) => {
+                          const key = String(value);
+                          const cfg = (chartConfig as ChartConfig)[key];
+                          return (
+                            <span className="inline-flex items-center rounded-full bg-muted/80 px-2.5 py-1 text-xs font-medium text-foreground ml-1">
+                              {cfg?.label ?? key}
+                            </span>
+                          );
+                        }}
+                      />
+                      <Line
+                        yAxisId="score"
+                        type="monotone"
+                        dataKey="wellbeing"
+                        stroke="var(--color-wellbeing)"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeOpacity={0.9}
+                        dot={(p) => {
+                          const t = p?.payload?.ts as number | undefined;
+                          const isKey =
+                            (selectedTs != null && t === selectedTs) ||
+                            (latestTs != null && t === latestTs);
+                          if (!isKey) return false;
+                          return (
+                            <circle
+                              cx={p.cx}
+                              cy={p.cy}
+                              r={4}
+                              fill="var(--color-wellbeing)"
+                              stroke="hsl(var(--background))"
+                              strokeWidth={2}
+                            />
+                          );
+                        }}
+                        activeDot={{ r: 5 }}
+                      />
 
-                    <Line
-                      yAxisId="score"
-                      type="monotone"
-                      dataKey="sleep"
-                      stroke="var(--color-sleep)"
-                      strokeWidth={2}
-                      dot={(p) => {
-                        const t = p?.payload?.ts as number | undefined;
-                        const isKey =
-                          (selectedTs != null && t === selectedTs) ||
-                          (latestTs != null && t === latestTs);
-                        if (!isKey) return false;
-                        return (
-                          <circle
-                            cx={p.cx}
-                            cy={p.cy}
-                            r={4}
-                            fill="var(--color-sleep)"
-                            stroke="hsl(var(--background))"
-                            strokeWidth={2}
-                          />
-                        );
-                      }}
-                      activeDot={{ r: 5 }}
-                    />
+                      <Line
+                        yAxisId="score"
+                        type="monotone"
+                        dataKey="stress"
+                        stroke="var(--color-stress)"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeOpacity={0.9}
+                        dot={(p) => {
+                          const t = p?.payload?.ts as number | undefined;
+                          const isKey =
+                            (selectedTs != null && t === selectedTs) ||
+                            (latestTs != null && t === latestTs);
+                          if (!isKey) return false;
+                          return (
+                            <circle
+                              cx={p.cx}
+                              cy={p.cy}
+                              r={4}
+                              fill="var(--color-stress)"
+                              stroke="hsl(var(--background))"
+                              strokeWidth={2}
+                            />
+                          );
+                        }}
+                        activeDot={{ r: 5 }}
+                      />
 
-                    <Line
-                      yAxisId="exercise"
-                      type="monotone"
-                      dataKey="exercise"
-                      stroke="var(--color-exercise)"
-                      strokeWidth={2}
-                      dot={(p) => {
-                        const t = p?.payload?.ts as number | undefined;
-                        const isKey =
-                          (selectedTs != null && t === selectedTs) ||
-                          (latestTs != null && t === latestTs);
-                        if (!isKey) return false;
-                        return (
-                          <circle
-                            cx={p.cx}
-                            cy={p.cy}
-                            r={4}
-                            fill="var(--color-exercise)"
-                            stroke="hsl(var(--background))"
-                            strokeWidth={2}
-                          />
-                        );
-                      }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ChartContainer>
+                      <Line
+                        yAxisId="score"
+                        type="monotone"
+                        dataKey="sleep"
+                        stroke="var(--color-sleep)"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeOpacity={0.9}
+                        dot={(p) => {
+                          const t = p?.payload?.ts as number | undefined;
+                          const isKey =
+                            (selectedTs != null && t === selectedTs) ||
+                            (latestTs != null && t === latestTs);
+                          if (!isKey) return false;
+                          return (
+                            <circle
+                              cx={p.cx}
+                              cy={p.cy}
+                              r={4}
+                              fill="var(--color-sleep)"
+                              stroke="hsl(var(--background))"
+                              strokeWidth={2}
+                            />
+                          );
+                        }}
+                        activeDot={{ r: 5 }}
+                      />
+
+                      <Line
+                        yAxisId="exercise"
+                        type="monotone"
+                        dataKey="exercise"
+                        stroke="var(--color-exercise)"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeOpacity={0.85}
+                        dot={(p) => {
+                          const t = p?.payload?.ts as number | undefined;
+                          const isKey =
+                            (selectedTs != null && t === selectedTs) ||
+                            (latestTs != null && t === latestTs);
+                          if (!isKey) return false;
+                          return (
+                            <circle
+                              cx={p.cx}
+                              cy={p.cy}
+                              r={4}
+                              fill="var(--color-exercise)"
+                              stroke="hsl(var(--background))"
+                              strokeWidth={2}
+                            />
+                          );
+                        }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
               </div>
             )}
           </CardContent>
@@ -647,7 +797,7 @@ export default function TrackingPage() {
 
       {/* Header Summary Card */}
       <Card className="border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 bg-linear-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900">
-        <CardHeader className="space-y-4">
+        <CardHeader className="p-5 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
@@ -672,7 +822,7 @@ export default function TrackingPage() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-5 sm:px-6 pb-5 sm:pb-6">
           <p className="text-slate-700 dark:text-slate-300 text-base sm:text-lg leading-relaxed">
             {plan.summary}
           </p>
@@ -687,7 +837,7 @@ export default function TrackingPage() {
               Total de Hábitos
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <Target className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
               <span className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
@@ -707,12 +857,12 @@ export default function TrackingPage() {
         </Card>
 
         <Card className="border-2 border-slate-100 dark:border-slate-700/50 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all rounded-xl">
-          <CardHeader className="pb-2 sm:pb-3">
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
             <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
               Alta Prioridad
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400" />
               <span className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">
@@ -737,12 +887,12 @@ export default function TrackingPage() {
         </Card>
 
         <Card className="border-2 border-slate-100 dark:border-slate-700/50 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all rounded-xl sm:col-span-2 md:col-span-1">
-          <CardHeader className="pb-2 sm:pb-3">
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
             <CardTitle className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
               Última Actualización
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="flex items-center gap-2">
               <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
               <span className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
@@ -765,8 +915,8 @@ export default function TrackingPage() {
       {/* High Priority Habits */}
       {highPriorityHabits.length > 0 && (
         <div>
-          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-            <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full"></span>
+          <h2 className="text-xl sm:text-xl font-bold mb-4 flex items-center gap-2.5 text-slate-900 dark:text-white">
+            <span className="w-3 h-3 bg-red-500 rounded-full"></span>
             Hábitos de Alta Prioridad
           </h2>
           <div className="space-y-4">
