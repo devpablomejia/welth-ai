@@ -135,6 +135,8 @@ export default function AssessmentForm() {
                 </label>
                 <input
                   type="number"
+                  max={200}
+                  min={1}
                   name="weightKg"
                   required
                   step="0.1"
