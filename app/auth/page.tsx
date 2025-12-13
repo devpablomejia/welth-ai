@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { authService } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, BarChart3, Sparkles, TrendingUp } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function AuthPage() {
   const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [registerData, setRegisterData] = useState({
@@ -21,25 +22,88 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const humanizeAuthError = (message: string) => {
+    const raw = (message || "").trim();
+    const lower = raw.toLowerCase();
+
+    if (lower.includes("email signups are disabled")) {
+      return (
+        "Supabase bloqueó el registro: “Email signups are disabled”. " +
+        "Revisa en Supabase → Authentication → Providers: " +
+        "(1) Email = Enabled, (2) Allow new users to sign up = ON, " +
+        "y haz clic en “Save changes”. " +
+        "Si ya está así, probablemente tu app está usando las llaves de OTRO proyecto: " +
+        "compara el project ref de tu dashboard con el de NEXT_PUBLIC_SUPABASE_URL."
+      );
+    }
+
+    if (lower.includes("user already registered")) {
+      return "Ese usuario ya existe. Intenta con otro.";
+    }
+
+    return raw || "Ocurrió un error";
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) router.push("/dashboard");
+    });
+  }, [router, supabase]);
+
+  const normalizeUsername = (raw: string) =>
+    raw
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ".")
+      .replace(/[^a-z0-9._-]/g, "")
+      .replace(/\.+/g, ".")
+      .replace(/^\.|\.$/g, "");
+
+  const usernameToSyntheticEmail = (raw: string) => {
+    const username = normalizeUsername(raw);
+    if (!username) return "";
+    // Internal-only email for Supabase Email Auth. Not shown to the user.
+    return `${username}@welth.local`;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const result = authService.login(loginData.username, loginData.password);
+    try {
+      const username = normalizeUsername(loginData.username);
+      if (!username) {
+        setError("Ingresa un usuario válido");
+        return;
+      }
 
-    if (result.success) {
+      const email = usernameToSyntheticEmail(username);
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: loginData.password,
+      });
+
+      if (signInError) {
+        setError(humanizeAuthError(signInError.message));
+        return;
+      }
+
       router.push("/dashboard");
-    } else {
-      setError(result.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const normalizedUsername = normalizeUsername(registerData.username);
+    if (!normalizedUsername || normalizedUsername.length < 3) {
+      setError("El usuario debe tener al menos 3 caracteres (a-z, 0-9, . _ -)");
+      return;
+    }
 
     if (registerData.password !== registerData.confirmPassword) {
       setError("Las contraseñas no coinciden");
@@ -48,19 +112,50 @@ export default function AuthPage() {
 
     setLoading(true);
 
-    const result = authService.register(
-      registerData.username,
-      registerData.password
-    );
+    try {
+      const email = usernameToSyntheticEmail(normalizedUsername);
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: registerData.password,
+        options: {
+          data: {
+            username: normalizedUsername,
+          },
+        },
+      });
 
-    if (result.success) {
-      authService.login(registerData.username, registerData.password);
+      if (signUpError) {
+        setError(humanizeAuthError(signUpError.message));
+        return;
+      }
+
+      if (!data.session) {
+        setError(
+          "Cuenta creada. Como usamos usuario (sin email real), desactiva la confirmación por email en Supabase Auth o no podrás iniciar sesión."
+        );
+        setActiveTab("login");
+        return;
+      }
+
+      // Persist unique username in profiles table (enforced with UNIQUE constraint)
+      const { error: profileError } = await supabase.from("profiles").insert({
+        user_id: data.user?.id,
+        username: normalizedUsername,
+      });
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        setError(
+          "No se pudo completar el registro (usuario ya existe). Intenta con otro."
+        );
+        setActiveTab("register");
+        return;
+      }
+
       router.push("/dashboard");
-    } else {
-      setError(result.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

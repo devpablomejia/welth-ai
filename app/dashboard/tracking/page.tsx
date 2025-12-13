@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/auth";
 import type { HabitPlan, Habit } from "@/app/types/assessment";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,17 +24,14 @@ export default function TrackingPage() {
   }, []);
 
   const loadPlan = async () => {
-    const userId = authService.getCurrentUserId();
-    if (!userId) {
-      setError("Usuario no autenticado");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(`/api/plans?userId=${userId}`);
+      const response = await fetch(`/api/plans`);
 
       if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/auth");
+          return;
+        }
         if (response.status === 404) {
           setError("No hay evaluaciones previas");
         } else {

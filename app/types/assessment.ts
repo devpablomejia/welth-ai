@@ -29,7 +29,6 @@ export enum AlcoholFrequency {
 }
 
 export interface AssessmentRequest {
-    userId: number;
     age: number;
     weightKg: number;
     heightM: number;
@@ -72,7 +71,8 @@ export interface Habit {
 }
 
 export interface HabitPlan {
-    userId: number;
+    id?: string;
+    userId: string;
     createdAt: string;
     assessment: AssessmentRequest;
     habits: Habit[];

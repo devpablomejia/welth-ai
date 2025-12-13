@@ -24,7 +24,6 @@ export default function AssessmentForm() {
     const formData = new FormData(e.currentTarget);
 
     const assessment: AssessmentRequest = {
-      userId: Number(formData.get("userId")),
       age: Number(formData.get("age")),
       weightKg: Number(formData.get("weightKg")),
       heightM: Number(formData.get("heightM")),
@@ -103,18 +102,6 @@ export default function AssessmentForm() {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  ID Usuario
-                </label>
-                <input
-                  type="number"
-                  name="userId"
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 transition-all duration-200 outline-none hover:border-gray-300"
-                  defaultValue="1"
-                />
-              </div>
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">
                   Edad

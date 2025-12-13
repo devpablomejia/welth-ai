@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { authService } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, TrendingUp, LogOut, User, Menu, X } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
   children,
@@ -15,22 +15,61 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [username] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const user = authService.getCurrentUser();
-    return user?.username || "";
-  });
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push("/auth");
-    }
-  }, [router]);
+    let isMounted = true;
+
+    const loadUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!isMounted) return;
+
+      if (!session) {
+        router.push("/auth");
+        return;
+      }
+
+      const user = session.user;
+      const displayName =
+        (user.user_metadata?.username as string | undefined) ??
+        user.email ??
+        "";
+      setUsername(displayName);
+    };
+
+    loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push("/auth");
+        return;
+      }
+
+      const user = session.user;
+      const displayName =
+        (user.user_metadata?.username as string | undefined) ??
+        user.email ??
+        "";
+      setUsername(displayName);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [router, supabase]);
 
   const handleLogout = () => {
-    authService.logout();
-    router.push("/landing");
+    supabase.auth.signOut().finally(() => {
+      router.push("/landing");
+    });
   };
 
   const navItems = [

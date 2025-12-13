@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/auth";
 import type {
   AssessmentRequest,
   UserSex,
@@ -191,17 +190,10 @@ export default function EvaluationPage() {
       return;
     }
 
-    const userId = authService.getCurrentUserId();
-    if (!userId) {
-      setError("Usuario no autenticado");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
     const assessment: AssessmentRequest = {
-      userId,
       ...formData,
     } as AssessmentRequest;
 
