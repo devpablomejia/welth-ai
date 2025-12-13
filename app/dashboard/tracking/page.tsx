@@ -111,7 +111,7 @@ export default function TrackingPage() {
             <Button
               onClick={() => router.push("/dashboard/evaluation")}
               size="lg"
-              className="bg-black hover:bg-gray-800"
+              className="bg-black hover:bg-gray-800 text-white"
             >
               <ClipboardList className="w-4 h-4 mr-2 text-white" />
               Realizar Evaluación
