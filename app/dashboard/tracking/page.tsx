@@ -99,25 +99,27 @@ export default function TrackingPage() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <ClipboardList className="h-8 w-8 text-gray-400" />
             </div>
-            <CardTitle className="text-2xl">No hay evaluaciones previas</CardTitle>
+            <CardTitle className="text-2xl">
+              No hay evaluaciones previas
+            </CardTitle>
             <CardDescription className="text-base">
-              Realiza una evaluación para recibir tu plan personalizado de hábitos
+              Realiza una evaluación para recibir tu plan personalizado de
+              hábitos
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center pb-8">
-            <Button 
+            <Button
               onClick={() => router.push("/dashboard/evaluation")}
               size="lg"
               className="bg-black hover:bg-gray-800"
             >
-              <ClipboardList className="w-4 h-4 mr-2" />
+              <ClipboardList className="w-4 h-4 mr-2 text-white" />
               Realizar Evaluación
             </Button>
           </CardContent>
         </Card>
       </div>
     );
-        
   }
 
   const highPriorityHabits = plan.habits.filter((h) => h.priority === "high");
