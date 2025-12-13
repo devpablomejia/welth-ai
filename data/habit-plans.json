@@ -224,5 +224,113 @@
       }
     ],
     "summary": "El usuario presenta un IMC dentro del rango normal, pero tiene áreas de mejora en el sueño, horarios de comidas, gestión del estrés y bienestar general. El plan se enfoca en optimizar estos aspectos considerando su nivel de actividad moderada y disposición al cambio."
+  },
+  {
+    "userId": 2,
+    "createdAt": "2025-12-13T02:46:07.045Z",
+    "assessment": {
+      "userId": 2,
+      "age": 19,
+      "weightKg": 80,
+      "heightM": 1.7,
+      "userSex": "MALE",
+      "wakeTime": "12:00",
+      "sleepTime": "14:00",
+      "breakfastTime": "12:00",
+      "lunchTime": "12:00",
+      "dinnerTime": "12:00",
+      "waterCupsDay": 7,
+      "wakeDifficulty": 5,
+      "nightAwakenings": 0,
+      "sleepRepairScore": 5,
+      "sleepOnsetScore": 5,
+      "activityLevel": "MODERATELY_ACTIVE",
+      "exerciseFrequencyPerWeek": 2,
+      "stressLevel": 5,
+      "endOfDayFeeling": "TIRED",
+      "wellbeingScore": 5,
+      "readinessChange": 5,
+      "confidenceChange": 5,
+      "drinksAlcohol": true,
+      "alcoholFrequency": "DAILY",
+      "smokesTobacco": false,
+      "tobaccoUnitsPerDay": 0,
+      "fruitServingsDay": 1,
+      "vegetableServingsDay": 1,
+      "processedFoodWeek": 6
+    },
+    "habits": [
+      {
+        "id": "habit-1",
+        "title": "Regularizar Horario de Sueño",
+        "description": "Intenta acostarte y despertarte a la misma hora todos los días, incluso los fines de semana. Empieza por adelantar la hora de acostarte y despertarte 30 minutos cada día hasta alcanzar un horario más adecuado (acostarte entre 22:00 y 23:00 y despertarte entre 7:00 y 8:00). Crea una rutina relajante antes de dormir, como leer o tomar un baño caliente.",
+        "category": "sueño",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "high",
+        "reasoning": "El horario de sueño actual es extremadamente irregular y afecta negativamente la energía, el estado de ánimo y el metabolismo. Regularizarlo es crucial para mejorar el bienestar general."
+      },
+      {
+        "id": "habit-2",
+        "title": "Aumentar Consumo de Frutas y Verduras",
+        "description": "Intenta incluir al menos 3 porciones de frutas y 3 porciones de verduras en tu dieta diaria. Puedes añadir fruta a tu desayuno y meriendas, y acompañar tus comidas principales con una ensalada o verduras cocidas. Varía los colores y tipos de frutas y verduras para obtener una amplia gama de nutrientes.",
+        "category": "alimentación",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "high",
+        "reasoning": "El bajo consumo de frutas y verduras limita la ingesta de vitaminas, minerales y fibra, esenciales para la salud y el control del peso."
+      },
+      {
+        "id": "habit-3",
+        "title": "Reducir Consumo de Alcohol",
+        "description": "Reduce gradualmente el consumo de alcohol. Empieza por tener días sin alcohol durante la semana, aumentando progresivamente la cantidad de días. Considera sustituir el alcohol por alternativas sin alcohol, como agua con gas con limón o infusiones.",
+        "category": "alimentación",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "high",
+        "reasoning": "El consumo diario de alcohol es perjudicial para la salud física y mental, y puede afectar negativamente el sueño y el peso."
+      },
+      {
+        "id": "habit-4",
+        "title": "Disminuir Comida Procesada",
+        "description": "Identifica los alimentos procesados que consumes con mayor frecuencia y busca alternativas más saludables. Por ejemplo, en lugar de comprar pan de molde industrial, opta por pan integral artesanal. Prioriza alimentos frescos y prepara tus propias comidas siempre que sea posible.",
+        "category": "alimentación",
+        "frequency": "semanal",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "La alta ingesta de alimentos procesados contribuye al exceso de calorías, grasas saturadas y azúcares, lo cual impacta negativamente el peso y la salud general."
+      },
+      {
+        "id": "habit-5",
+        "title": "Incrementar Actividad Física",
+        "description": "Aumenta la frecuencia de ejercicio a 3-4 veces por semana. Incorpora actividades que disfrutes, como caminar, correr, nadar o practicar algún deporte. Intenta aumentar la intensidad de tus entrenamientos actuales o probar nuevas actividades.",
+        "category": "ejercicio",
+        "frequency": "semanal",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Aumentar la actividad física ayuda a quemar calorías, mejorar la salud cardiovascular, fortalecer los músculos y reducir el estrés."
+      },
+      {
+        "id": "habit-6",
+        "title": "Practicar Técnicas de Relajación",
+        "description": "Dedica 10-15 minutos al día a practicar técnicas de relajación, como la meditación, la respiración profunda o el yoga. Puedes encontrar guías y tutoriales en línea. Esto te ayudará a reducir el estrés y mejorar tu estado de ánimo.",
+        "category": "estrés",
+        "frequency": "diario",
+        "timeOfDay": "noche",
+        "priority": "medium",
+        "reasoning": "El nivel de estrés reportado (5/10) puede estar afectando la calidad del sueño y el bienestar general. Incorporar técnicas de relajación puede ayudar a manejar el estrés de manera más efectiva."
+      },
+      {
+        "id": "habit-7",
+        "title": "Hidratación Consciente",
+        "description": "Asegúrate de beber al menos 8 vasos de agua al día. Lleva una botella de agua contigo y rellénala a lo largo del día. Bebe un vaso de agua antes de cada comida para ayudar a controlar el apetito.",
+        "category": "hidratación",
+        "frequency": "diario",
+        "timeOfDay": "variable",
+        "priority": "medium",
+        "reasoning": "Una buena hidratación es esencial para la salud general, la energía y el rendimiento físico. Aunque el consumo actual es de 7 vasos, aumentar a 8 puede ser beneficioso."
+      }
+    ],
+    "summary": "El usuario presenta sobrepeso y un horario de sueño muy irregular, lo cual afecta su bienestar general. Consume alcohol diariamente y tiene una dieta baja en frutas y verduras, con alto consumo de alimentos procesados. Su nivel de actividad física es moderado, pero necesita mejorar su sueño, alimentación y reducir el consumo de alcohol. Su disposición al cambio es moderada, por lo que se proponen cambios graduales."
   }
 ]
